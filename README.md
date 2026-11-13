@@ -11,7 +11,7 @@ A small userscript for people who'd rather not hand over their attention data.
 [![Purpose](https://img.shields.io/badge/purpose-privacy%20audit-8957e5?style=for-the-badge)](#-what-this-is-and-what-it-isnt)
 [![Not for](https://img.shields.io/badge/NOT%20for-bypassing%20proctoring-d73a4a?style=for-the-badge)](#-responsible-use)
 
-**🇬🇧 English** · [🇷🇺 Русский](README.ru.md)
+**🇬🇧 English** · [🇷🇺 Русский](readme-ru.md)
 
 </div>
 

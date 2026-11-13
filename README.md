@@ -1,152 +1,109 @@
+<div align="center">
+
 # 🛡️ Visibility Privacy Guard
 
-**🇷🇺 Русский** · [🇬🇧 English](#-english)
+**Stop pages from watching when you switch tabs.**
+A small userscript for people who'd rather not hand over their attention data.
 
-Userscript для Tampermonkey / Violentmonkey, который уменьшает объём сигналов о переключении вкладок и сворачивании окна, доступных веб-страницам, и глушит часть телеметрии видимости. Инструмент для **локального аудита приватности** и защиты цифрового следа.
+[![Version](https://img.shields.io/badge/version-1.2.0-4c8bf5?style=for-the-badge)](#)
+[![License: MIT](https://img.shields.io/badge/license-MIT-2ea44f?style=for-the-badge)](LICENSE)
+[![Userscript](https://img.shields.io/badge/Tampermonkey-Violentmonkey-black?style=for-the-badge)](#-install)
+[![Purpose](https://img.shields.io/badge/purpose-privacy%20audit-8957e5?style=for-the-badge)](#-what-this-is-and-what-it-isnt)
+[![Not for](https://img.shields.io/badge/NOT%20for-bypassing%20proctoring-d73a4a?style=for-the-badge)](#-responsible-use)
 
-> ⚠️ Скрипт **не даёт абсолютной защиты** и не предназначен для обхода прокторинга, экзаменов, антифрод-систем и правил платформ. Подробнее в разделе [Ограничения](#ограничения).
+**🇬🇧 English** · [🇷🇺 Русский](README.ru.md)
+
+</div>
+
+> [!IMPORTANT]
+> **This is a privacy tool, not a bypass tool.** It was built to audit and limit how much behavioral data pages collect about you. It is **not** designed, tested or supported for getting around exam proctoring, anti-cheat, integrity checks or any rule that says "keep this tab in focus". Please don't use it that way. [More below.](#-responsible-use)
 
 ---
 
-## Что делает
+## 📖 Contents
 
-| Модуль | Описание |
-|---|---|
-| **Изоляция состояния** | `document.hidden`, `visibilityState` (и `webkit`-варианты) всегда показывают «вкладка активна», `document.hasFocus()` возвращает `true`. |
-| **Подавление событий** | Блокирует регистрацию слушателей `visibilitychange`, `pagehide`, `freeze`, `resume` на любом `EventTarget`, а `blur` — на `window`/`document`/`html`/`body`. Также нейтрализует `onblur`, `onpagehide` и т. п. |
-| **Фильтр телеметрии** | Перехватывает `fetch`, `navigator.sendBeacon` и `XMLHttpRequest`. Запросы с маркерами аналитики заменяются фиктивным успешным ответом. |
-| **Виртуальные часы** | Сглаживает скачки дельты времени для `performance.now()`, `requestAnimationFrame` и `setInterval` при возврате на вкладку. |
+[Why it exists](#-why-it-exists) · [What it does](#-what-it-does) · [What this is and what it isn't](#-what-this-is-and-what-it-isnt) · [Install](#-install) · [Configure](#-configure) · [Check it works](#-check-it-works) · [Limitations](#-limitations) · [FAQ](#-faq) · [Responsible use](#-responsible-use)
 
-## Установка
+---
 
-### 💻 ПК (Chrome, Edge, Brave, Opera, Firefox)
+## 🔍 Why it exists
 
-1. Установите менеджер userscript'ов:
-   - [Tampermonkey](https://www.tampermonkey.net/) (Chrome, Edge, Firefox, Opera, Safari)
-   - или [Violentmonkey](https://violentmonkey.github.io/) (открытый код)
-2. Откройте Raw-ссылку на скрипт:
-   `https://raw.githubusercontent.com/YOUR_USERNAME/visibility-privacy-guard/main/visibility-privacy-guard.user.js`
-3. Менеджер предложит установку — нажмите **Install**.
-4. **Chrome / Edge:** если скрипты не запускаются, включите режим разработчика на странице `chrome://extensions` (и разрешите «Allow User Scripts» в настройках Tampermonkey, если браузер это требует).
-5. Обновите открытые вкладки.
+Open a tab, switch away, come back. To you that's nothing. To a page, it's a signal: `document.hidden` flips, `visibilitychange` fires, a `blur` event goes out, and a beacon quietly reports how long you were gone.
 
-Ручная установка: Tampermonkey → **Create a new script** → вставьте содержимое файла → **Ctrl+S**.
+Multiply that by every site you visit and you get a detailed picture of your habits, built without you ever clicking anything. This script closes that particular leak and lets you see what a page tries to do with it.
 
-### 📱 Android
+## ⚙️ What it does
 
-Мобильный Chrome и большинство Chromium-браузеров для Android **не поддерживают расширения**, поэтому нужен браузер с их поддержкой:
-
-1. Установите **Firefox для Android** (или Firefox Nightly).
-2. Меню → **Расширения** → установите **Tampermonkey** или **Violentmonkey**.
-3. Откройте Raw-ссылку на скрипт в Firefox и подтвердите установку.
-
-### 🍎 iOS
-
-1. Установите из App Store приложение **Userscripts** (Safari-расширение).
-2. Включите его в *Настройки → Safari → Расширения* и выберите папку для скриптов.
-3. Положите туда файл `visibility-privacy-guard.user.js`.
-
-## Настройка
-
-В начале файла находится объект `CONFIG`:
-
-| Параметр | По умолчанию | Назначение |
+| | Module | What happens |
 |---|---|---|
-| `telemetryPattern` | `/visibility\|focus\|blur\|telemetry\|analytics\|tracking\|heartbeat\|presence/i` | Регулярное выражение для поиска маркеров в URL и теле запроса. |
-| `fakeResponseBody` | `{"ok":true}` | Тело фиктивного ответа. |
-| `patchDateNow` | `false` | Сдвигать ли `Date.now()`. Включение может сломать сроки токенов и часы на сайтах. |
-| `debug` | `false` | Логировать срабатывания в консоль (`[VPG]`). |
+| 🔒 | **State isolation** | `document.hidden` and `visibilityState` (plus the `webkit` twins) always say "active". `document.hasFocus()` returns `true`. |
+| 🔇 | **Event suppression** | Listeners for `visibilitychange`, `pagehide`, `freeze` and `resume` are dropped on any `EventTarget`. `blur` is dropped on `window`, `document`, `<html>` and `<body>`. The `on…` properties are neutralized too. |
+| 📡 | **Telemetry filter** | `fetch`, `sendBeacon` and `XMLHttpRequest` calls that match analytics markers get a fake "everything's fine" response, so trackers don't see failed requests. |
+| ⏱️ | **Virtual clocks** | `performance.now()`, `requestAnimationFrame` and `setInterval` get smoothed so a long pause doesn't show up as a huge time gap when you return. |
 
-## Проверка работы
+All of it runs at `document-start`, in plain JavaScript, with zero dependencies.
 
-Откройте консоль DevTools на любой странице и выполните:
+## 🧭 What this is and what it isn't
 
-```js
-document.hidden          // false
-document.visibilityState // "visible"
-document.hasFocus()      // true
-```
-
-Переключитесь на другую вкладку и вернитесь: значения не должны меняться. Для проверки телеметрии включите `debug: true` и смотрите сообщения `[VPG]`.
-
-## Ограничения
-
-Скрипт работает на уровне JavaScript-API страницы, поэтому:
-
-- **Побочные эффекты:** видео не ставятся на паузу в фоне, чаты и игры ведут себя как в активной вкладке, возрастает расход батареи.
-- **`blur` блокируется только на глобальных целях.** На элементах форм он нужен для валидации и автодополнения.
-- **Фильтр по ключевым словам грубый:** возможны ложные срабатывания (например, URL со словом `focus`). Сужайте `telemetryPattern`.
-- **Не покрыто:** `WebSocket`, тела запросов в `Blob`/`ArrayBuffer`/`Stream`, Web Workers, `new Date()`, `setTimeout`, Page Lifecycle API, `IntersectionObserver`, а также серверная аналитика.
-- **Троттлинг браузера остаётся:** в фоне Chrome замедляет таймеры, а `requestAnimationFrame` не вызывается. Детектор, который считает тики, а не дельту времени, это увидит.
-- **Подмена API обнаруживаема.** Скрипт не пытается быть незаметным для страниц.
-- Скрипт **не заменяет** блокировщик трекеров. Для блокировки по доменам используйте [uBlock Origin](https://github.com/gorhill/uBlock).
-
-## Ответственное использование
-
-Проект создан для приватности и аудита. Не используйте его для обхода прокторинга, онлайн-экзаменов, проверок честности и других систем, правила которых запрещают скрывать активность. Ответственность за использование лежит на вас.
-
-## Лицензия
-
-[MIT](LICENSE)
-
----
-
-# 🇬🇧 English
-
-A Tampermonkey / Violentmonkey userscript that reduces the tab-visibility and focus signals exposed to web pages and stubs part of the visibility telemetry. Built as a **local privacy audit** tool.
-
-> ⚠️ This is **not absolute protection** and is not intended for bypassing proctoring, exams, anti-fraud systems or platform rules. See [Limitations](#limitations).
-
-## Features
-
-| Module | Description |
+| ✅ It is | ❌ It is not |
 |---|---|
-| **State isolation** | `document.hidden` and `visibilityState` (plus `webkit` variants) always report an active tab; `document.hasFocus()` returns `true`. |
-| **Event suppression** | Blocks listeners for `visibilitychange`, `pagehide`, `freeze`, `resume` on any `EventTarget`, and `blur` on `window`/`document`/`html`/`body`. Also neutralizes `onblur`, `onpagehide`, etc. |
-| **Telemetry filter** | Intercepts `fetch`, `navigator.sendBeacon` and `XMLHttpRequest`. Requests matching analytics markers get a fake success response. |
-| **Virtual clocks** | Smooths time deltas for `performance.now()`, `requestAnimationFrame` and `setInterval` after returning to the tab. |
+| A **privacy** tool that limits tab-activity tracking | An exam or proctoring bypass |
+| A way to **audit** what a page does with visibility signals | A way to hide activity from platforms that forbid it |
+| A readable, hackable example of API-level hardening | A stealth tool: it makes no attempt to hide itself from pages |
+| A complement to a tracker blocker | A replacement for uBlock Origin or similar |
 
-## Installation
+## 📥 Install
 
-### 💻 Desktop (Chrome, Edge, Brave, Opera, Firefox)
+<details open>
+<summary><b>💻 Desktop: Chrome, Edge, Brave, Opera, Firefox</b></summary>
 
-1. Install a userscript manager: [Tampermonkey](https://www.tampermonkey.net/) or [Violentmonkey](https://violentmonkey.github.io/).
-2. Open the raw script URL:
-   `https://raw.githubusercontent.com/YOUR_USERNAME/visibility-privacy-guard/main/visibility-privacy-guard.user.js`
-3. Click **Install** in the manager prompt.
-4. **Chrome / Edge:** if scripts don't run, enable Developer mode on `chrome://extensions` (and allow user scripts in Tampermonkey's settings if the browser asks for it).
-5. Reload open tabs.
+1. Install a userscript manager: [Tampermonkey](https://www.tampermonkey.net/) or the open-source [Violentmonkey](https://violentmonkey.github.io/).
+2. Open the raw script:
+   **`https://raw.githubusercontent.com/legoninjago161514-a11y/visibility-privacy-guard/main/visibility-privacy-guard.user.js`**
+3. Your manager shows an install page. Hit **Install**.
+4. On Chrome or Edge, if scripts don't run, turn on Developer mode at `chrome://extensions` and allow user scripts in the extension's settings.
+5. Reload your open tabs.
 
-Manual install: Tampermonkey → **Create a new script** → paste the file contents → **Ctrl+S**.
+Prefer doing it by hand? Tampermonkey → **Create a new script** → paste the file → **Ctrl+S**.
 
-### 📱 Android
+</details>
 
-Mobile Chrome and most Chromium browsers for Android **don't support extensions**, so you need a browser that does:
+<details>
+<summary><b>📱 Android</b></summary>
 
-1. Install **Firefox for Android** (or Firefox Nightly).
+Chrome for Android and most Chromium-based mobile browsers don't support extensions, so you need one that does:
+
+1. Install **Firefox for Android** (Nightly works too).
 2. Menu → **Add-ons** → install **Tampermonkey** or **Violentmonkey**.
-3. Open the raw script URL in Firefox and confirm the installation.
+3. Open the raw script link in Firefox and confirm.
 
-### 🍎 iOS
+</details>
 
-1. Install the **Userscripts** Safari extension from the App Store.
-2. Enable it in *Settings → Safari → Extensions* and pick a scripts folder.
-3. Put `visibility-privacy-guard.user.js` into that folder.
+<details>
+<summary><b>🍎 iOS</b></summary>
 
-## Configuration
+1. Get the **Userscripts** Safari extension from the App Store.
+2. Enable it under *Settings → Safari → Extensions* and pick a folder for your scripts.
+3. Drop `visibility-privacy-guard.user.js` into that folder.
 
-The `CONFIG` object at the top of the file:
+</details>
 
-| Option | Default | Purpose |
+## 🎛️ Configure
+
+Everything lives in the `CONFIG` object at the top of the file.
+
+| Option | Default | What it does |
 |---|---|---|
-| `telemetryPattern` | `/visibility\|focus\|blur\|telemetry\|analytics\|tracking\|heartbeat\|presence/i` | Regex matched against request URL and body. |
-| `fakeResponseBody` | `{"ok":true}` | Body of the fake response. |
-| `patchDateNow` | `false` | Whether to shift `Date.now()`. May break token expiry and clocks on sites. |
-| `debug` | `false` | Log stubbed requests and blocked listeners (`[VPG]`). |
+| `telemetryPattern` | `/visibility\|focus\|blur\|telemetry\|analytics\|tracking\|heartbeat\|presence/i` | Regex tested against request URLs and bodies. |
+| `fakeResponseBody` | `{"ok":true}` | What stubbed requests get back. |
+| `patchDateNow` | `false` | Also shifts `Date.now()`. Leave it off unless you know why: it can break token expiry and clocks. |
+| `debug` | `false` | Prints every blocked listener and stubbed request as `[VPG]` in the console. |
 
-## Verifying
+A site misbehaving? Set `debug: true`, reload, and watch the console. Most of the time the culprit is a keyword in `telemetryPattern` matching a harmless URL.
 
-Run this in DevTools on any page:
+## ✅ Check it works
+
+Paste this into DevTools on any page:
 
 ```js
 document.hidden          // false
@@ -154,24 +111,53 @@ document.visibilityState // "visible"
 document.hasFocus()      // true
 ```
 
-Switch tabs and come back: the values must not change. Enable `debug: true` to see `[VPG]` log entries for telemetry.
+Now switch to another tab and come back. Nothing should change. Turn on `debug` to see telemetry getting stubbed in real time.
 
-## Limitations
+## ⚠️ Limitations
 
-The script works at the page's JavaScript API level, so:
+No script that lives inside the page can promise total protection, and this one doesn't try to.
 
-- **Side effects:** background videos won't pause, chats and games behave as if the tab is active, battery use grows.
-- **`blur` is blocked only on global targets.** Form elements need it for validation and autocomplete.
-- **Keyword filtering is coarse:** false positives are possible (e.g. a URL containing `focus`). Narrow `telemetryPattern`.
-- **Not covered:** `WebSocket`, request bodies in `Blob`/`ArrayBuffer`/`Stream`, Web Workers, `new Date()`, `setTimeout`, the Page Lifecycle API, `IntersectionObserver`, and server-side analytics.
-- **Browser throttling remains:** Chrome slows timers in the background and doesn't fire `requestAnimationFrame`. A detector that counts ticks rather than time deltas will notice.
-- **API overrides are detectable.** The script makes no attempt to be invisible to pages.
-- It **does not replace** a tracker blocker. Use [uBlock Origin](https://github.com/gorhill/uBlock) for domain-level blocking.
+- **Side effects are real.** Background videos won't pause, chats and games act like you never left, and your battery pays for it.
+- **`blur` is blocked only on global targets.** On form fields it drives validation and autocomplete, so breaking it would break the web.
+- **The keyword filter is blunt.** A URL containing `focus` will get stubbed. Tighten `telemetryPattern` if that bites you.
+- **Not covered:** `WebSocket`, request bodies sent as `Blob`/`ArrayBuffer`/`Stream`, Web Workers, `new Date()`, `setTimeout`, the Page Lifecycle API, `IntersectionObserver`, and anything that happens on the server.
+- **Browser throttling still happens.** Chrome slows background timers and stops `requestAnimationFrame`. A detector that counts ticks instead of measuring time deltas will still notice.
+- **The overrides are detectable.** That's by design: this project aims at privacy, not at being invisible.
 
-## Responsible use
+## ❓ FAQ
 
-This project is for privacy and auditing. Do not use it to bypass proctoring, online exams, integrity checks or any system whose rules forbid hiding activity. You are responsible for how you use it.
+**Will this help me get through an online exam?**
+No, and please don't try. Proctoring platforms forbid hiding your activity, they have other ways to detect it, and this script isn't built or tested for that. The consequences land on you.
 
-## License
+**Is it a stealth or anti-detection tool?**
+No. It doesn't try to hide itself from pages, and there are no plans to add features aimed at that.
 
-[MIT](LICENSE)
+**Does it replace uBlock Origin?**
+No. uBlock blocks at the network level, by domain. This script works on the page's own APIs. They complement each other.
+
+**A site broke after installing. What now?**
+Set `debug: true`, reload, and see which listener or request was stubbed. Narrow `telemetryPattern` or disable the script for that site in your manager.
+
+**Why is my laptop battery draining faster?**
+Pages think the tab is always active, so they never throttle their own background work. Switch the script off for sites you leave open all day.
+
+## 🤝 Responsible use
+
+Visibility Privacy Guard exists so you can reduce how much a page learns about your habits and audit what it tries to collect. That's the whole point.
+
+It is **not** meant for:
+
+- bypassing exam proctoring or online testing platforms,
+- defeating anti-cheat or anti-fraud systems,
+- hiding activity where a platform's rules require it to be visible,
+- anything else that breaks the terms you agreed to.
+
+If the rules of a site or an exam say "stay on this tab", stay on this tab. Responsibility for how the script gets used sits with you.
+
+## 🧪 Contributing
+
+Issues and PRs are welcome, especially for false positives in the telemetry filter and for new limitations worth documenting. Changes aimed at making the script undetectable by pages, or at helping bypass proctoring, will be declined.
+
+## 📄 License
+
+[MIT](LICENSE). Use it, fork it, improve it, and use it responsibly.

@@ -87,7 +87,13 @@ Chrome для Android и большинство Chromium-браузеров на
 3. Положите в неё файл `visibility-privacy-guard.user.js`.
 
 </details>
-
+<details>
+  <summary><b>Без расширений (Cromite / встроенные юзерскрипты)</b></summary>
+  1. Включите **User Scripts** в настройках Cromite.
+  2. Скачайте файл `visibility-privacy-guard.user.js` (или откройте ссылку на файл через Cromite).
+  3. Добавьте его в *Settings -> User Scripts* и обновите страницу.
+  </details>
+  
 ## 🎛️ Настройка
 
 Всё лежит в объекте `CONFIG` в начале файла.

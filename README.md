@@ -87,7 +87,13 @@ Chrome for Android and most Chromium-based mobile browsers don't support extensi
 3. Drop `visibility-privacy-guard.user.js` into that folder.
 
 </details>
-
+<details>
+  <summary><b>Without extensions (Cromite / built-in userscripts)</b></summary>
+  1. Enable **User Scripts** in Cromite settings.
+  2. Download `visibility-privacy-guard.user.js` (or open the link to the file in Cromite).
+  3. Add it in *Settings -> User Scripts* and refresh the page.
+  </details>
+  
 ## 🎛️ Configure
 
 Everything lives in the `CONFIG` object at the top of the file.
